@@ -1,11 +1,11 @@
 import { Module } from '@nestjs/common';
-import { AuthService } from './auth.service';
-import { AuthController } from './auth.controller';
+import { AuthService } from './auth.service.js';
+import { AuthController } from './auth.controller.js';
 import { PassportModule } from '@nestjs/passport';
 import { JwtModule } from '@nestjs/jwt';
-import { PrismaModule } from 'src/prisma/prisma.module';
-import { UsersModule } from 'src/users/users.module';
-import { JwtStrategy } from './jwt.strategy';
+import { PrismaModule } from '../prisma/prisma.module.js';
+import { UsersModule } from '../users/users.module.js';
+import { JwtStrategy } from './jwt.strategy.js';
 
 export const jwtSecret = 'zjP9h6ZI5LoSKCRj';
 

@@ -9,17 +9,17 @@ import {
   ParseIntPipe,
   UseGuards,
 } from '@nestjs/common';
-import { UsersService } from './users.service';
-import { CreateUserDto } from './dto/create-user.dto';
-import { UpdateUserDto } from './dto/update-user.dto';
+import { UsersService } from './users.service.js';
+import { CreateUserDto } from './dto/create-user.dto.js';
+import { UpdateUserDto } from './dto/update-user.dto.js';
 import {
   ApiBearerAuth,
   ApiCreatedResponse,
   ApiOkResponse,
   ApiTags,
 } from '@nestjs/swagger';
-import { UserEntity } from './entities/user.entity';
-import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
+import { UserEntity } from './entities/user.entity.js';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard.js';
 
 @Controller('users')
 @ApiTags('users')

@@ -1,16 +1,16 @@
 // src/main.ts
 
 import { HttpAdapterHost, NestFactory, Reflector } from '@nestjs/core';
-import { AppModule } from './app.module';
+import { AppModule } from './app.module.js';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { ClassSerializerInterceptor, ValidationPipe } from '@nestjs/common';
-import { PrismaClientExceptionFilter } from './prisma-client-exception.filter';
+import { PrismaClientExceptionFilter } from './prisma-client-exception.filter.js';
 import { ConfigService } from '@nestjs/config';
 import type {
   CorsConfig,
   NestConfig,
   SwaggerConfig,
-} from './common/configs/config.interface';
+} from './common/configs/config.interface.js';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -48,5 +48,6 @@ async function bootstrap() {
   await app.listen(process.env.PORT || nestConfig.port || 3000);
   console.log(`🚀 Server started on http://localhost:3000`);
   console.log(`📘 Swagger on   http://localhost:3000/docs`);
+  console.log(app.getHttpAdapter().getType());
 }
 bootstrap();

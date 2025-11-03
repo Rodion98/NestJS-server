@@ -1,4 +1,4 @@
-import type { Config } from './config.interface';
+import type { Config } from './config.interface.js';
 
 const config: Config = {
   nest: {
