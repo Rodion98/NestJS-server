@@ -18,6 +18,7 @@ async function bootstrap() {
   // Validation
   app.useGlobalPipes(new ValidationPipe({ whitelist: true }));
   app.useGlobalInterceptors(new ClassSerializerInterceptor(app.get(Reflector)));
+
   // Prisma Client Exception Filter for unhandled exceptions
   const { httpAdapter } = app.get(HttpAdapterHost);
   app.useGlobalFilters(new PrismaClientExceptionFilter(httpAdapter));
@@ -48,6 +49,6 @@ async function bootstrap() {
   await app.listen(process.env.PORT || nestConfig.port || 3000);
   console.log(`🚀 Server started on http://localhost:3000`);
   console.log(`📘 Swagger on   http://localhost:3000/docs`);
-  console.log(app.getHttpAdapter().getType());
+  console.log(`📘 AdminJS on   http://localhost:3000/admin`);
 }
 bootstrap();
