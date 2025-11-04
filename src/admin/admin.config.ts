@@ -27,16 +27,16 @@ export const AdminPanelModule = import('@adminjs/nestjs').then(({ AdminModule })
           ],
           branding: {
             companyName: 'Admin Panel',
-            logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/4/4c/Typescript_logo_2020.svg/640px-Typescript_logo_2020.svg.png',
-             favicon: 'https://upload.wikimedia.org/wikipedia/commons/3/39/Deepin_Icon_Theme_%E2%80%93_network-server_%286%29.svg',
-              theme: {
-    colors: {
-      primary100: '#007bff',
-      primary80: '#339cff',
-      primary60: '#66baff',
-      primary40: '#99d4ff',
-      primary20: '#ccecff',
-    },
+            logo: '/static/images/logo.png',
+            favicon: '/static/images/favicon.svg',
+            theme: {
+                  colors: {
+                   primary100: '#007bff',
+                   primary80: '#339cff',
+                   primary60: '#66baff',
+                   primary40: '#99d4ff',
+                   primary20: '#ccecff',
+                 },
   },
             softwareBrothers: false,
           },

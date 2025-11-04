@@ -12,8 +12,19 @@ import type {
   SwaggerConfig,
 } from './common/configs/config.interface.js';
 
+import * as express from 'express';
+import { join, dirname } from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+
+ // Раздаём всё содержимое public
+  const publicPath = join(process.cwd(), 'public');
+  app.use('/static', express.static(publicPath));
 
   // Validation
   app.useGlobalPipes(new ValidationPipe({ whitelist: true }));
