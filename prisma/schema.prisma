@@ -10,6 +10,11 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum Role {
+  USER
+  ADMIN
+}
+
 model Article {
   id          Int      @id @default(autoincrement())
   title       String   @unique
@@ -30,4 +35,5 @@ model User {
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
   articles  Article[]
+  role      Role      @default(USER)
 }

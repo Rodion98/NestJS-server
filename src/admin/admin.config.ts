@@ -1,32 +1,24 @@
-import AdminJS from 'adminjs';
+// src/admin/admin.config.ts
+import AdminJS, { type CurrentAdmin } from 'adminjs';
 import { Database, Resource, getModelByName } from '@adminjs/prisma';
 import { PrismaService } from '../prisma/prisma.service.js';
-import { ConfigService } from '@nestjs/config';
-import { ConfigModule } from '@nestjs/config';
+import { ConfigModule, ConfigService } from '@nestjs/config';
+import { AdminAuthService } from './admin-auth.service.js';
 
-// Регистрируем адаптер ОДИН РАЗ
 AdminJS.registerAdapter({ Database, Resource });
 
-// Отдельный экземпляр PrismaService для AdminJS
-const prisma = new PrismaService();
-
-// 🔑 Экспортируем промис-модуль AdminJS для подключения в AppModule
 export const AdminPanelModule = import('@adminjs/nestjs').then(({ AdminModule }) =>
   AdminModule.createAdminAsync({
-    imports: [ConfigModule], // ✅ чтобы ConfigService был доступен
-    inject: [ConfigService], // ✅ инжектим его в фабрику
+    imports: [ConfigModule],
+    inject: [ConfigService],
     useFactory: async (configService: ConfigService) => {
-      const ADMIN_EMAIL = configService.get<string>('ADMIN_EMAIL');
-      const ADMIN_PASSWORD = configService.get<string>('ADMIN_PASSWORD');
-      const ADMIN_COOKIE_SECRET = configService.get<string>('ADMIN_COOKIE_SECRET') || 'fallback_secret';
+      const prisma = new PrismaService();
+      const adminAuth = new AdminAuthService(prisma, configService);
 
-      const authenticate = async (email: string, password: string) => {
-        if (email === ADMIN_EMAIL && password === ADMIN_PASSWORD) {
-          return { email };
-        }
-        return null;
-      };
-return {
+      const ADMIN_COOKIE_SECRET =
+        configService.get<string>('ADMIN_COOKIE_SECRET') ?? 'change-me';
+
+      return {
         adminJsOptions: {
           rootPath: '/admin',
           resources: [
@@ -34,13 +26,29 @@ return {
             { resource: { model: getModelByName('Article'), client: prisma } },
           ],
           branding: {
-            companyName: 'TrainX Admin',
-            logo: false,
+            companyName: 'Admin Panel',
+            logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/4/4c/Typescript_logo_2020.svg/640px-Typescript_logo_2020.svg.png',
+             favicon: 'https://upload.wikimedia.org/wikipedia/commons/3/39/Deepin_Icon_Theme_%E2%80%93_network-server_%286%29.svg',
+              theme: {
+    colors: {
+      primary100: '#007bff',
+      primary80: '#339cff',
+      primary60: '#66baff',
+      primary40: '#99d4ff',
+      primary20: '#ccecff',
+    },
+  },
             softwareBrothers: false,
           },
         },
         auth: {
-          authenticate,
+          // Явно типизируем, что возвращаем CurrentAdmin | null
+          authenticate: (
+            email: string,
+            password: string,
+          ): Promise<CurrentAdmin | null> => {
+            return adminAuth.validateAdmin(email, password);
+          },
           cookieName: 'adminjs',
           cookiePassword: ADMIN_COOKIE_SECRET,
         },
