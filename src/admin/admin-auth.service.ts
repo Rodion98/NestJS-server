@@ -34,7 +34,8 @@ export class AdminAuthService {
         email: user.email,
         // кастомные поля можно добавлять свободно
         role: user.role,
-        name: user.name ?? undefined,
+        name: user.firstName ?? undefined,
+
         source: 'database',
       };
 

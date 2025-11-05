@@ -18,7 +18,8 @@ async function main() {
     },
     create: {
       email: 'sabin@adams.com',
-      name: 'Sabin Adams',
+      firstName: 'Sabin',
+      lastName: 'Adams',
       password: passwordSabin,
     },
   });
@@ -30,7 +31,8 @@ async function main() {
     },
     create: {
       email: 'alex@ruheni.com',
-      name: 'Alex Ruheni',
+      firstName: 'Alex',
+      lastName: 'Ruheni',
       password: passwordAlex,
     },
   });
@@ -42,7 +44,8 @@ async function main() {
     },
     create: {
       email: '98rodion@mail.ru',
-      name: 'Khripchenko Rodion',
+      firstName: 'Rodion',
+      lastName: 'Khripchenko',
       password: passwordRodion,
       role: 'ADMIN',
     },
