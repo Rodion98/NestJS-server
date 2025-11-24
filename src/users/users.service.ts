@@ -19,12 +19,11 @@ export class UsersService {
     return this.prisma.user.create({ data: createUserDto });
   }
 
-    async findByEmail(email: string) {
+  async findByEmail(email: string) {
     return this.prisma.user.findUnique({
       where: { email },
     });
   }
-
 
   findAll() {
     return this.prisma.user.findMany();
@@ -34,14 +33,21 @@ export class UsersService {
     return this.prisma.user.findUnique({ where: { id } });
   }
 
-  async updateRefreshTokenHash (userId: number, refreshTokenHash: string) {
-        await this.prisma.user.update({
+  async updateRefreshTokenHash(userId: number, refreshTokenHash: string) {
+    await this.prisma.user.update({
       where: {
         id: userId,
       },
       data: {
-       refreshTokenHash : refreshTokenHash,
+        refreshTokenHash: refreshTokenHash,
       },
+    });
+  }
+
+  async logout(userId: number): Promise<void> {
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: { refreshTokenHash: null },
     });
   }
 

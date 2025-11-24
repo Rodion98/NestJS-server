@@ -2,7 +2,7 @@ import {
   Injectable,
   UnauthorizedException,
   ConflictException,
-  ForbiddenException
+  ForbiddenException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { AuthEntity } from './entity/auth.entity.js';
@@ -21,12 +21,11 @@ export class AuthService {
     private readonly config: ConfigService,
   ) {}
 
-
-   /**
+  /**
    * Регистрация нового пользователя.
    * Создаёт запись в БД, предварительно проверяя уникальность email.
    */
-  async sign_up (dto: SignUpDto): Promise<AuthEntity> {
+  async sign_up(dto: SignUpDto): Promise<AuthEntity> {
     // 1. Проверяем, что email свободен
     const existing = await this.usersService.findByEmail(dto.email);
     if (existing) {
@@ -46,7 +45,7 @@ export class AuthService {
     } as any);
 
     // 4. Генерируем токены для нового пользователя
-    const tokens = await this.getTokens(user.id,user.email);
+    const tokens = await this.getTokens(user.id, user.email);
 
     // 5. Записываем токены в БД пользователю
     await this.updateRefreshTokenHash(user.id, tokens.refreshToken);
@@ -55,23 +54,21 @@ export class AuthService {
     return tokens;
   }
 
-
-     /**
+  /**
 //    * Авторизация пользователя по email и паролю.
 //    * Проверка существования пользователя и сравнение пароля.
 //    */
   async log_in(dto: LogInDto): Promise<AuthEntity> {
-
     // 1. Проверяем, есть ли пользователь с таким email
     const user = await this.usersService.findByEmail(dto.email);
     if (!user) {
-        throw new UnauthorizedException('Invalid credentials');
+      throw new UnauthorizedException('Invalid credentials');
     }
-    
-     // 2. Сравниваем пароли (plain vs hashed)
+
+    // 2. Сравниваем пароли (plain vs hashed)
     const passwordMatches = await argon2.verify(user.password, dto.password);
     if (!passwordMatches) throw new ForbiddenException('Access Denied');
-    
+
     // 3. Генерируем токены
     const tokens = await this.getTokens(user.id, user.email);
 
@@ -81,19 +78,16 @@ export class AuthService {
     return tokens;
   }
 
-
-    async refreshTokens(userId: number, refreshToken: string): Promise<AuthEntity> {
-
-        if (!refreshToken) {
-    throw new UnauthorizedException('Refresh token is required');
-  }
+  async refreshTokens(userId: number, refreshToken: string): Promise<AuthEntity> {
+    if (!refreshToken) {
+      throw new UnauthorizedException('Refresh token is required');
+    }
 
     // 2. Ищем пользователя
     const user = await this.usersService.findOne(userId);
     if (!user || !user.refreshTokenHash) {
       throw new UnauthorizedException('Access denied');
     }
-
 
     // 3. Сравниваем переданный refreshToken с хэшом из БД
     const rtMatches = await argon2.verify(user.refreshTokenHash, refreshToken);
@@ -108,9 +102,12 @@ export class AuthService {
     return tokens;
   }
 
+  async logout(userId: number): Promise<{ success: boolean }> {
+    await this.usersService.logout(userId);
+    return { success: true };
+  }
 
   async getTokens(userId: number, email: string): Promise<AuthEntity> {
-
     const jwtPayload: JwtPayload = {
       sub: userId,
       email: email,
@@ -124,11 +121,11 @@ export class AuthService {
     const [accessToken, refreshToken] = await Promise.all([
       this.jwtService.signAsync(jwtPayload, {
         secret: accessSecret,
-      expiresIn: accessExpiresIn, 
+        expiresIn: accessExpiresIn,
       }),
       this.jwtService.signAsync(jwtPayload, {
-      secret: refreshSecret,
-      expiresIn: refreshExpiresIn,
+        secret: refreshSecret,
+        expiresIn: refreshExpiresIn,
       }),
     ]);
 
@@ -140,6 +137,6 @@ export class AuthService {
 
   async updateRefreshTokenHash(userId: number, refreshToken: string): Promise<void> {
     const hash = await argon2.hash(refreshToken);
-    await this.usersService.updateRefreshTokenHash(userId,hash)
+    await this.usersService.updateRefreshTokenHash(userId, hash);
   }
 }
