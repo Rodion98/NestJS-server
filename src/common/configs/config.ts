@@ -14,10 +14,12 @@ const config: Config = {
     version: '0.1',
     path: 'api',
   },
-  security: {
-    expiresIn: '15m',
-    refreshIn: '7d',
-    bcryptSaltOrRound: 10,
+    security: {
+    // если есть переменные окружения — берём их
+    // если нет — используем дефолты
+    expiresIn: process.env.JWT_ACCESS_EXPIRES_IN ?? '15m',
+    refreshIn: process.env.JWT_REFRESH_EXPIRES_IN ?? '7d',
+    bcryptSaltOrRound: Number(process.env.BCRYPT_SALT_ROUNDS ?? 10),
   },
 };
 

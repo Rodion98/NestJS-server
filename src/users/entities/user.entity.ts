@@ -30,6 +30,9 @@ export class UserEntity implements User {
   @Exclude()
   password: string;
 
+   @Exclude()
+  refreshTokenHash: string;
+
    @ApiProperty({ enum: Role, enumName: 'Role' })
   role: Role;
 }
