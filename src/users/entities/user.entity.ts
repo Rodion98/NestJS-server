@@ -18,13 +18,20 @@ export class UserEntity implements User {
   updatedAt: Date;
 
   @ApiProperty()
-  name: string;
+  firstName: string;
 
+  @ApiProperty()
+  lastName: string;
+
+  
   @ApiProperty()
   email: string;
 
   @Exclude()
   password: string;
+
+   @Exclude()
+  refreshTokenHash: string;
 
    @ApiProperty({ enum: Role, enumName: 'Role' })
   role: Role;
