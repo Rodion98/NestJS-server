@@ -8,6 +8,7 @@ const roundsOfHashing = 10;
 async function main() {
   const passwordSabin = await bcrypt.hash('password-sabin', roundsOfHashing);
   const passwordAlex = await bcrypt.hash('password-alex', roundsOfHashing);
+  const passwordRodion = await bcrypt.hash('123456789', roundsOfHashing);
 
   // create two dummy users
   const user1 = await prisma.user.upsert({
@@ -17,7 +18,8 @@ async function main() {
     },
     create: {
       email: 'sabin@adams.com',
-      name: 'Sabin Adams',
+      firstName: 'Sabin',
+      lastName: 'Adams',
       password: passwordSabin,
     },
   });
@@ -29,8 +31,23 @@ async function main() {
     },
     create: {
       email: 'alex@ruheni.com',
-      name: 'Alex Ruheni',
+      firstName: 'Alex',
+      lastName: 'Ruheni',
       password: passwordAlex,
+    },
+  });
+
+    const user3 = await prisma.user.upsert({
+    where: { email: '98rodion@mail.ru' },
+    update: {
+      password: passwordSabin,
+    },
+    create: {
+      email: '98rodion@mail.ru',
+      firstName: 'Rodion',
+      lastName: 'Khripchenko',
+      password: passwordRodion,
+      role: 'ADMIN',
     },
   });
 

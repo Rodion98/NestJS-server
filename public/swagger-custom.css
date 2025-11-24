@@ -1,0 +1,17 @@
+/* public/swagger-custom.css */
+.download-openapi-btn {
+  margin-left: 16px;
+  padding: 6px 12px;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+  font-size: 14px;
+  background: linear-gradient(90deg, #3182ce, #63b3ed);
+  color: #fff;
+  transition: 0.2s;
+}
+
+.download-openapi-btn:hover {
+  transform: translateY(-1px);
+  opacity: 0.9;
+}

@@ -10,6 +10,11 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum Role {
+  USER
+  ADMIN
+}
+
 model Article {
   id          Int      @id @default(autoincrement())
   title       String   @unique
@@ -24,10 +29,13 @@ model Article {
 
 model User {
   id        Int       @id @default(autoincrement())
-  name      String?
+  firstName String?  
+  lastName  String?  
   email     String    @unique
   password  String
+  refreshTokenHash String?
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
   articles  Article[]
+  role      Role      @default(USER)
 }
