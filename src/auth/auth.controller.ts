@@ -7,6 +7,7 @@ import { SignInDto } from './dto/sign_in.dto.js';
 import { RefreshTokenGuard } from '../common/guards/refresh_token.guard.js';
 import { Public, GetCurrentUserId, GetCurrentUser } from '../common/decorators/index.js';
 import { AccessTokenGuard } from '../common/guards/index.js';
+import { ChangePasswordDto } from '../auth/dto/change-password.dto.js';
 
 @Controller('auth')
 @ApiTags('Auth')
@@ -31,6 +32,14 @@ export class AuthController {
   @Post('logout')
   logout(@GetCurrentUserId() userId: number) {
     return this.authService.logout(userId);
+  }
+
+  @UseGuards(AccessTokenGuard) // или AuthGuard('jwt'), если так используешь
+  @Post('change-password')
+  @ApiOkResponse({ schema: { example: { message: 'Password changed successfully' } } })
+  async changePassword(@GetCurrentUserId() userId: number, @Body() dto: ChangePasswordDto) {
+    await this.authService.changePassword(userId, dto);
+    return { message: 'Password changed successfully' };
   }
 
   @Public()
