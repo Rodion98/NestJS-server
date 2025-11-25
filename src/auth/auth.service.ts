@@ -3,6 +3,7 @@ import {
   UnauthorizedException,
   ConflictException,
   ForbiddenException,
+  NotFoundException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { AuthEntity } from './entity/auth.entity.js';
@@ -12,6 +13,7 @@ import { ConfigService } from '@nestjs/config';
 import { JwtPayload } from './types/jwtPayload.type.js';
 import { LogInDto } from './dto/log_in.dto.js';
 import * as argon2 from 'argon2';
+import { ChangePasswordDto } from './dto/change-password.dto.js';
 
 @Injectable()
 export class AuthService {
@@ -105,6 +107,27 @@ export class AuthService {
   async logout(userId: number): Promise<{ success: boolean }> {
     await this.usersService.logout(userId);
     return { success: true };
+  }
+
+  async changePassword(userId: number, dto: ChangePasswordDto): Promise<void> {
+    const user = await this.usersService.findOne(userId);
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    // 1. Проверяем текущий пароль
+    const isPasswordValid = await argon2.verify(user.password, dto.currentPassword);
+
+    if (!isPasswordValid) {
+      throw new UnauthorizedException('Current password is incorrect');
+    }
+
+    // 2. Хэшируем новый пароль
+    const newHashedPassword = await argon2.hash(dto.newPassword);
+
+    // 3. Обновляем пароль и обнуляем refreshTokenHash
+    await this.usersService.changePassword(userId, newHashedPassword);
+    // });
   }
 
   async getTokens(userId: number, email: string): Promise<AuthEntity> {

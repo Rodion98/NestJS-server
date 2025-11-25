@@ -51,6 +51,13 @@ export class UsersService {
     });
   }
 
+  async changePassword(userId: number, newHashedPassword: string): Promise<void> {
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: { refreshTokenHash: null, password: newHashedPassword },
+    });
+  }
+
   async update(id: number, updateUserDto: UpdateUserDto) {
     // if (updateUserDto.password) {
     //   updateUserDto.password = await bcrypt.hash(
