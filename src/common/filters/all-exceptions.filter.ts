@@ -1,29 +1,25 @@
-// src/common/filters/all-exceptions.filter.ts
 import {
   ArgumentsHost,
-  BadRequestException,
   Catch,
   ExceptionFilter,
   HttpException,
   HttpStatus,
+  Logger,
 } from '@nestjs/common';
 import { HttpAdapterHost } from '@nestjs/core';
-import { AppError } from '../errors/app-error.js';
+import type { Request } from 'express';
+import { Prisma } from '@prisma/client';
 
-interface ErrorResponse {
-  statusCode: number;
-  message: string | string[];
-  code?: string;
-  error?: string;
-  details?: unknown;
-  // поля, которые будем добавлять только в DEV
-  timestamp?: string;
-  path?: string;
-  stack?: string;
-}
+import { AppError } from '../errors/app-error.js';
+import { ErrorResponse } from '../errors/error-response.interface.js';
+import { mapAppError } from '../errors/mappers/app-error.mapper.js';
+import { mapHttpException } from '../errors/mappers/http-exception.mapper.js';
+import { mapPrismaError } from '../errors/mappers/prisma-error.mapper.js';
 
 @Catch()
 export class AllExceptionsFilter implements ExceptionFilter {
+  private readonly logger = new Logger(AllExceptionsFilter.name);
+
   constructor(
     private readonly httpAdapterHost: HttpAdapterHost,
     private readonly isProd: boolean,
@@ -39,86 +35,58 @@ export class AllExceptionsFilter implements ExceptionFilter {
     let httpStatus = HttpStatus.INTERNAL_SERVER_ERROR;
     let body: ErrorResponse;
 
-    // 1) Наши доменные ошибки AppError
+    // 1) AppError — наши доменные ошибки
     if (exception instanceof AppError) {
-      httpStatus = exception.statusCode;
-
-      body = {
-        statusCode: exception.statusCode,
-        code: exception.code,
-        message: exception.message,
-        details: exception.details,
-      };
+      const result = mapAppError(exception);
+      httpStatus = result.httpStatus;
+      body = result.body;
 
       this.addDevFields(body, httpAdapter, request, exception);
+      this.logException(exception, body);
       return httpAdapter.reply(response, body, httpStatus);
     }
 
-    // 2) HttpException (NotFoundException, ForbiddenException, ValidationPipe и т.д.)
+    // 2) HttpException (NotFound, Forbidden, ValidationPipe и т.п.)
     if (exception instanceof HttpException) {
-      httpStatus = exception.getStatus();
-      const res = exception.getResponse();
-
-      // Особый кейс: ошибки валидации (ValidationPipe)
-      if (exception instanceof BadRequestException) {
-        const r: any = res;
-        const message = r?.message;
-
-        if (Array.isArray(message)) {
-          body = {
-            statusCode: httpStatus,
-            code: 'VALIDATION.ERROR',
-            message: 'Validation failed',
-            details: message, // массив с текстами ошибок
-            error: r.error ?? 'Bad Request',
-          };
-
-          this.addDevFields(body, httpAdapter, request, exception);
-          return httpAdapter.reply(response, body, httpStatus);
-        }
-      }
-
-      // Общий кейс для любых HttpException
-      let message: string | string[] = 'Error';
-      let error: string | undefined;
-      let code: string | undefined;
-
-      if (typeof res === 'string') {
-        message = res;
-      } else if (typeof res === 'object' && res !== null) {
-        const r: any = res;
-        message = r.message ?? 'Error';
-        error = r.error;
-        code = r.code;
-      }
-
-      body = {
-        statusCode: httpStatus,
-        message,
-        error,
-        code,
-      };
+      const result = mapHttpException(exception);
+      httpStatus = result.httpStatus;
+      body = result.body;
 
       this.addDevFields(body, httpAdapter, request, exception);
+      this.logException(exception, body);
       return httpAdapter.reply(response, body, httpStatus);
     }
 
-    // 3) Любая другая ошибка — считаем 500кой
+    // 3) Prisma ошибки
+    if (exception instanceof Prisma.PrismaClientKnownRequestError) {
+      const result = mapPrismaError(exception);
+      httpStatus = result.httpStatus;
+      body = result.body;
+
+      this.addDevFields(body, httpAdapter, request, exception);
+      this.logException(exception, body);
+      return httpAdapter.reply(response, body, httpStatus);
+    }
+
+    // 4) Любая другая ошибка — 500
     body = {
       statusCode: httpStatus,
+      code: 'INTERNAL.SERVER_ERROR',
       message: 'Internal server error',
       error: (exception as any)?.name ?? (exception as any)?.constructor?.name ?? 'Error',
     };
 
-    // логируем всегда
-    // eslint-disable-next-line no-console
-    console.error(exception);
-
     this.addDevFields(body, httpAdapter, request, exception);
+    this.logException(exception, body);
     return httpAdapter.reply(response, body, httpStatus);
   }
 
-  private addDevFields(body: ErrorResponse, httpAdapter: any, request: any, exception: unknown) {
+  private addDevFields(
+    body: ErrorResponse,
+    httpAdapter: any,
+    request: Request,
+    exception: unknown,
+  ) {
     if (this.isProd) {
       return;
     }
@@ -129,5 +97,13 @@ export class AllExceptionsFilter implements ExceptionFilter {
     if (exception instanceof Error) {
       body.stack = exception.stack;
     }
+  }
+
+  private logException(exception: unknown, body: ErrorResponse) {
+    const prefix = this.isProd ? '' : '[DEV] ';
+    this.logger.error(
+      `${prefix}[${body.code ?? 'NO_CODE'}] ${body.message}`,
+      exception instanceof Error ? exception.stack : undefined,
+    );
   }
 }
