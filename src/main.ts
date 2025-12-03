@@ -5,18 +5,16 @@ import { AppModule } from './app.module.js';
 import { ClassSerializerInterceptor, ValidationPipe } from '@nestjs/common';
 import { PrismaClientExceptionFilter } from './prisma-client-exception.filter.js';
 import { ConfigService } from '@nestjs/config';
-import type {
-  CorsConfig,
-  NestConfig,
-} from './common/configs/config.interface.js';
+import type { CorsConfig, NestConfig } from './common/configs/config.interface.js';
 import * as express from 'express';
-import { join, } from 'path';
+import { join } from 'path';
 import { setupSwagger } from './swagger/swagger.config.js';
+import { AllExceptionsFilter } from './common/filters/all-exceptions.filter.js';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
- // Раздаём всё содержимое public
+  // Раздаём всё содержимое public
   const publicPath = join(process.cwd(), 'public');
   app.use('/static', express.static(publicPath));
 
@@ -25,16 +23,22 @@ async function bootstrap() {
   app.useGlobalInterceptors(new ClassSerializerInterceptor(app.get(Reflector)));
 
   // Prisma Client Exception Filter for unhandled exceptions
-  const { httpAdapter } = app.get(HttpAdapterHost);
-  app.useGlobalFilters(new PrismaClientExceptionFilter(httpAdapter));
+  const httpAdapterHost = app.get(HttpAdapterHost);
+  //   const { httpAdapter } = app.get(HttpAdapterHost);
+  // app.useGlobalFilters(new PrismaClientExceptionFilter(httpAdapter));
 
   const configService = app.get(ConfigService);
   const nestConfig = configService.get<NestConfig>('nest');
   const corsConfig = configService.get<CorsConfig>('cors');
 
-   setupSwagger(app, configService);
+  const nodeEnv = configService.get<string>('NODE_ENV') ?? 'development';
+  const isProd = nodeEnv === 'production';
 
-   // Cors
+  app.useGlobalFilters(new AllExceptionsFilter(httpAdapterHost, isProd));
+
+  setupSwagger(app, configService);
+
+  // Cors
   if (corsConfig.enabled) {
     app.enableCors();
   }

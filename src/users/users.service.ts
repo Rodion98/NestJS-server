@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto.js';
 import { UpdateUserDto } from './dto/update-user.dto.js';
 import { PrismaService } from '../prisma/prisma.service.js';
+import { UserNotFoundError } from '../common/errors/for_route/users.errors.js';
 
 export const roundsOfHashing = 10;
 
@@ -10,19 +11,17 @@ export class UsersService {
   constructor(private prisma: PrismaService) {}
 
   async create(createUserDto: CreateUserDto) {
-    // const hashedPassword = await bcrypt.hash(
-    //   createUserDto.password,
-    //   roundsOfHashing,
-    // );
-    // createUserDto.password = hashedPassword;
-
     return this.prisma.user.create({ data: createUserDto });
   }
 
   async findByEmail(email: string) {
-    return this.prisma.user.findUnique({
+    const user = this.prisma.user.findUnique({
       where: { email },
     });
+    if (!user) {
+      throw new UserNotFoundError();
+    }
+    return user;
   }
 
   findAll() {

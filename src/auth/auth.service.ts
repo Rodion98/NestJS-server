@@ -14,6 +14,15 @@ import { JwtPayload } from './types/jwtPayload.type.js';
 import { LogInDto } from './dto/log_in.dto.js';
 import * as argon2 from 'argon2';
 import { ChangePasswordDto } from './dto/change-password.dto.js';
+import {
+  CurrentPasswordInvalidError,
+  EmailTakenError,
+  InvalidCredentialsError,
+  RefreshTokenInvalidError,
+  RefreshTokenNotFoundError,
+  RefreshTokenRequiredError,
+} from '../common/errors/for_route/auth.errors.js';
+import { UserNotFoundError } from '../common/errors/for_route/users.errors.js';
 
 @Injectable()
 export class AuthService {
@@ -31,7 +40,7 @@ export class AuthService {
     // 1. Проверяем, что email свободен
     const existing = await this.usersService.findByEmail(dto.email);
     if (existing) {
-      throw new ConflictException('User with this email already exists');
+      throw new EmailTakenError(dto.email);
     }
 
     // 2. Хэшируем пароль перед сохранением
@@ -63,13 +72,13 @@ export class AuthService {
   async log_in(dto: LogInDto): Promise<AuthEntity> {
     // 1. Проверяем, есть ли пользователь с таким email
     const user = await this.usersService.findByEmail(dto.email);
-    if (!user) {
-      throw new UnauthorizedException('Invalid credentials');
-    }
+    // if (!user) {
+    //   throw new UnauthorizedError();
+    // }
 
     // 2. Сравниваем пароли (plain vs hashed)
     const passwordMatches = await argon2.verify(user.password, dto.password);
-    if (!passwordMatches) throw new ForbiddenException('Access Denied');
+    if (!passwordMatches) throw new InvalidCredentialsError();
 
     // 3. Генерируем токены
     const tokens = await this.getTokens(user.id, user.email);
@@ -82,18 +91,18 @@ export class AuthService {
 
   async refreshTokens(userId: number, refreshToken: string): Promise<AuthEntity> {
     if (!refreshToken) {
-      throw new UnauthorizedException('Refresh token is required');
+      throw new RefreshTokenRequiredError();
     }
 
     // 2. Ищем пользователя
     const user = await this.usersService.findOne(userId);
     if (!user || !user.refreshTokenHash) {
-      throw new UnauthorizedException('Access denied');
+      throw new RefreshTokenNotFoundError();
     }
 
     // 3. Сравниваем переданный refreshToken с хэшом из БД
     const rtMatches = await argon2.verify(user.refreshTokenHash, refreshToken);
-    if (!rtMatches) throw new ForbiddenException('Access Denied');
+    if (!rtMatches) throw new RefreshTokenInvalidError();
 
     // 4. Генерируем новые токены
     const tokens = await this.getTokens(user.id, user.email);
@@ -112,14 +121,14 @@ export class AuthService {
   async changePassword(userId: number, dto: ChangePasswordDto): Promise<void> {
     const user = await this.usersService.findOne(userId);
     if (!user) {
-      throw new NotFoundException('User not found');
+      throw new UserNotFoundError();
     }
 
     // 1. Проверяем текущий пароль
     const isPasswordValid = await argon2.verify(user.password, dto.currentPassword);
 
     if (!isPasswordValid) {
-      throw new UnauthorizedException('Current password is incorrect');
+      throw new CurrentPasswordInvalidError();
     }
 
     // 2. Хэшируем новый пароль

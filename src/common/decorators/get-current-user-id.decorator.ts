@@ -1,24 +1,16 @@
-// import { createParamDecorator, ExecutionContext } from '@nestjs/common';
-// import { JwtPayload } from '../../auth/types/jwtPayload.type.js';
-
-// export const GetCurrentUserId = createParamDecorator(
-//   (_: undefined, context: ExecutionContext): number => {
-//     const request = context.switchToHttp().getRequest();
-//     const user = request.user as JwtPayload;
-//     return user.sub;
-//   },
-// );
 import { createParamDecorator, ExecutionContext, UnauthorizedException } from '@nestjs/common';
+import { UnauthorizedError } from '../errors/for_route/auth.errors.js';
 
 export const GetCurrentUserId = createParamDecorator(
   (_: undefined, context: ExecutionContext): number => {
     const request = context.switchToHttp().getRequest();
-    const user = request.user as { id?: number };
+    console.log('request.user in GetCurrentUserId:', request.user);
+    const user = request.user as { sub?: number };
 
-    if (!user || typeof user.id !== 'number') {
-      throw new UnauthorizedException('User id not found in request.user');
+    if (!user || typeof user.sub !== 'number') {
+      throw new UnauthorizedError('User id not found in request.user');
     }
 
-    return user.id;
+    return user.sub;
   },
 );
